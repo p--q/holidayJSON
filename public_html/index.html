@@ -508,7 +508,16 @@ function addHoliday() {
                 }
             }
         }
-    } 
+    } else if (e.indexOf("-")!=-1) {  // 区間指定のとき
+        
+  
+    } else if (e.indexOf("/")!=-1) {  // 年月日の指定のとき
+        var yre = /^(\d\d\d\d)\/([1]*[1-9])\/([1-3]*[1-9])$/.exec(e);
+        var mre = /^([1]*[1-9])\/([1-3]*[1-9])$/.exec(e);
+        var dre = /^([1-3]*[1-9])$/.exec(e);
+        
+        
+    }
     var json = JSON.stringify(dic);  // 辞書をJSON文字列に変換。
     document.holiday.msg.value = json;  // 変換したJSON文字列をテキストエリアに表示。    
   });
