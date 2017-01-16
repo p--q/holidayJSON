@@ -1,3 +1,4 @@
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <script>
 // Copyright (c) 2014, boiledorange73
 // hdayjp 2014-12-20
@@ -468,65 +469,78 @@ function clipboadCopy(){  // テキストエリアをクリップボードにコ
   document.execCommand("copy");
  };
 function addHoliday() {
-  var dic = JSON.parse(document.getElementById("msg").value);
-  var str = document.getElementById("added").value; 
-  var arr = str.split(",");  // 追加する祝日条件を配列に変換する
-  arr.forEach(function(e) {  // 各祝日条件について
-    if (e.indexOf("/")==-1) {  // 日または曜日のみ指定のとき
-        var d = parseInt(e);  // 文字列を整数に変換。
-        if (d) {  // 整数に変換できた時は日のみ指定と考える。
-            if (d>0 && d<32) {  // 1から31の整数のみに対して処理する。
-                for (key in dic) {  // すべての年について
-                    for (var m=0;m<12;m++) {  // すべての月に対して
-                        var h = dic[key][m];  // 祝日の配列を収得
-                        h.push(d);  // 新しい休日を配列に追加
-                        dic[key][m] = Array.from(new Set(h)).sort(function(a,b) {  // 重複日を削除して昇順に要素を並べて辞書に戻す。
-                                return (a < b ? -1 : 1);
-                        });
+    var daydic = {"Sun":0,"Mon":1,"Tue":2,"Wed":3,"Thu":4,"Fri":5,"Sat":6};  // 曜日の辞書。
+    var dre = /^([1-3]*[1-9])(Sun|Mon|Tue|Wed|Thu|Fri|Sat)*$/i  // 日指定の正規表現パターン。
+    var mre = /^([1]*[1-9])\/([1-3]*[1-9])(Sun|Mon|Tue|Wed|Thu|Fri|Sat)*$/i  // 月日指定の正規表現パターン。
+    var yre = /^(\d\d\d\d)\/([1]*[1-9])\/([1-3]*[1-9])(Sun|Mon|Tue|Wed|Thu|Fri|Sat)*$/i  // 年月日指定の正規表現パターン。
+    var dic = JSON.parse(document.getElementById("msg").value);  // 祝日JSONを取得。
+    var str = document.getElementById("added").value;  // 追加休日の条件取得。
+    var arr = str.split(",");  // 休日条件を配列に変換する
+    arr.forEach(function(e) {  // 各休日条件について 
+        if (e.indexOf("-")!=-1) {  // 区間指定のとき
+            
+            
+        } else if (e in daydic) { // 曜日指定のとき
+            for (var key in dic) {  // すべての年について
+                for (var m=0;m<12;m++) {  // すべての月に対して
+                   var dt = new Date(parseInt(key), m+1, 0);  // 月末のDateオブジェクトを収得。
+                   var day = dt.getDay();  // 月末の曜日を取得。日曜日は0、土曜日は6になる
+                   var end = dt.getDate();  // 月末の日にちを収得。
+                   var dif = day - daydic[e];
+                   var d = (dif<0)?end-(7+dif):end-dif;  // その月の最後のその曜日の日を収得。
+                   var h = dic[key][m];  // 祝日の配列を収得
+                   while (d>0) {  // dが正の間
+                       h.push(d);  // 新しい休日を配列に追加
+                       d = d - 7;  // 前週の休日を収得。
                     }
-                }             
-            }   
-        } else {  // 曜日のみ指定の時
-            var daydic = {"Sun":0,"Mon":1,"Tue":2,"Wed":3,"Thr":4,"Fri":5,"Sat":6};
-            if (e in daydic) {  // 曜日が指定されているとき
-                 for (key in dic) {  // すべての年について
-                     for (var m=0;m<12;m++) {  // すべての月に対して
-                        var dt = new Date(parseInt(key), m+1, 0);  // 月末のDateオブジェクトを収得。
-                        var day = dt.getDay();  // 月末の曜日を取得。日曜日は0、土曜日は6になる
-                        var end = dt.getDate();  // 月末の日にちを収得。
-                        var dif = day - daydic[e];
-                        var d = (dif<0)?end-(7+dif):end-dif;  // その月の最後のその曜日の日を収得。
-                        var h = dic[key][m];  // 祝日の配列を収得
-                        while (d>0) {  // dが正の間
-                            h.push(d);  // 新しい休日を配列に追加
-                            d = d - 7;  // 前週の日を収得。
-                         }
+                   dic[key][m] = Array.from(new Set(h)).sort(function(a,b) {  // 重複日を削除して昇順に要素を並べて辞書に戻す。
+                       return (a < b ? -1 : 1);
+                   });
+               }
+           }
+        } else {  // 区間指定以外のとき
+            switch (true) {
+                case dre.test(e):  // 日を指定
+                    var d = parseInt(dre.exec(e)[1]);  // 文字列を整数に変換。
+                    if (d<32) {  // 1から31の整数のみに対して処理する。
+                        for (var key in dic) {  // すべての年について
+                            for (var m=0;m<12;m++) {  // すべての月に対して
+                                var h = dic[key][m];  // 祝日の配列を収得
+                                h.push(d);  // 新しい休日を配列に追加
+                                dic[key][m] = Array.from(new Set(h)).sort(function(a,b) {  // 重複日を削除して昇順に要素を並べて辞書に戻す。
+                                    return (a < b ? -1 : 1);
+                                });
+                            }
+                        }             
+                    } 
+                    break;
+                case mre.test(e):  // 月日を指定
+                    var marr = mre.exec(e);  // 正規表現の結果の配列を取得。
+                    for (var key in dic) {  // すべての年について
+                        var m = parseInt(marr[1]) - 1;  // 月を取得
+                        var h = dic[key][m];  // 指定月の祝日の配列を収得
+                        h.push(parseInt(marr[2]));  // 新しい休日を配列に追加
                         dic[key][m] = Array.from(new Set(h)).sort(function(a,b) {  // 重複日を削除して昇順に要素を並べて辞書に戻す。
                             return (a < b ? -1 : 1);
                         });
                     }
-                }
+                    break;
+                case yre.test(e):  // 年月日を指定
+                    var yarr = yre.exec(e);  // 年月日の指定の時
+                    var key = yarr[1];  // 年を取得
+                    var m = parseInt(yarr[2]) - 1;  // 月を取得
+                    var h = dic[key][m];  // 指定年月の祝日の配列を収得
+                    h.push(parseInt(yarr[3]));  // 新しい休日を配列に追加
+                    dic[key][m] = Array.from(new Set(h)).sort(function(a,b) {  // 重複日を削除して昇順に要素を並べて辞書に戻す。
+                        return (a < b ? -1 : 1);
+                    }); 
+                    break;
             }
         }
-    } else if (e.indexOf("-")!=-1) {  // 区間指定のとき
-        
-  
-    } else if (e.indexOf("/")!=-1) {  // 年月日の指定のとき
-        var yre = /^(\d\d\d\d)\/([1]*[1-9])\/([1-3]*[1-9])$/.exec(e);
-        var mre = /^([1]*[1-9])\/([1-3]*[1-9])$/.exec(e);
-        var dre = /^([1-3]*[1-9])$/.exec(e);
-        
-        
-    }
+    });
     var json = JSON.stringify(dic);  // 辞書をJSON文字列に変換。
-    document.holiday.msg.value = json;  // 変換したJSON文字列をテキストエリアに表示。    
-  });
-  
-
-  
+    document.holiday.msg.value = json;  // 変換したJSON文字列をテキストエリアに表示。   
 };
-
-
 </script>
 
 <form action="javascript:void(0)" method="GET" name="holiday">
