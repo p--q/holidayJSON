@@ -470,15 +470,64 @@ function clipboadCopy(){  // テキストエリアをクリップボードにコ
  };
 function addHoliday() {
     var daydic = {"Sun":0,"Mon":1,"Tue":2,"Wed":3,"Thu":4,"Fri":5,"Sat":6};  // 曜日の辞書。
-    var dre = /^([1-3]*[1-9])(Sun|Mon|Tue|Wed|Thu|Fri|Sat)*$/i;  // 日指定の正規表現パターン。
-    var mre = /^([1]*[1-9])\/([1-3]*[1-9])(Sun|Mon|Tue|Wed|Thu|Fri|Sat)*$/i;  // 月日指定の正規表現パターン。
-    var yre = /^(\d\d\d\d)\/([1]*[1-9])\/([1-3]*[1-9])(Sun|Mon|Tue|Wed|Thu|Fri|Sat)*$/i;  // 年月日指定の正規表現パターン。
+    var reD = /^([1-3]*[1-9])(Sun|Mon|Tue|Wed|Thu|Fri|Sat)*$/i;  // 日指定の正規表現パターン。
+    var reM = /^([1]*[1-9])\/([1-3]*[1-9])(Sun|Mon|Tue|Wed|Thu|Fri|Sat)*$/i;  // 月日指定の正規表現パターン。
+    var reY = /^(\d\d\d\d)\/([1]*[1-9])\/([1-3]*[1-9])(Sun|Mon|Tue|Wed|Thu|Fri|Sat)*$/i;  // 年月日指定の正規表現パターン。
     var dic = JSON.parse(document.getElementById("msg").value);  // 祝日JSONを取得。
-    var str = document.getElementById("added").value;  // 追加休日の条件取得。
-    var arr = str.split(",");  // 休日条件を配列に変換する
-    arr.forEach(function(e) {  // 各休日条件について 
+    document.getElementById("added").value.split(",").forEach(function(e) {  // 各休日条件について 
         if (e.indexOf("-")!=-1) {  // 区間指定のとき
-            
+            var arrC = e.split("-");  // 区間条件を配列に変換
+            var startC = arrC[0];  // 開始条件の取得
+            var endC = arrC[1];  // 終了条件の取得
+            switch (true) {
+                case reD.test(startC):  // 日-日のとき。毎月の繰り返し。
+                    var startD = parseInt(reD.exec(startC)[1]);  // 開始日の取得。
+                    var endD = parseInt(reD.exec(endC)[1]);  // 終了日の取得。
+                    for (var y in dic) {  // すべての年について
+                       for (var m=0;m<12;m++) {  // すべての月に対して
+                           var h = dic[y][m];  // 指定年月の祝日の配列を収得
+                           var end = new Date(parseInt(y), m+1, 0).getDate();  // 月末日を収得。
+                           endD = (endD>end+1)?end:endD;  // 月末日のチェック。
+                           for (var d=startD;d<endD+1;d++){
+                               h.push(d);  // 新しい休日を配列に追加
+                           }
+                           sort(y,m,h);  // 休日の配列の重複を削除して昇順に並び替えて辞書に戻す。
+                       }
+                    }
+                    break;
+                case reM.test(startC):  // 月日-月日、月日-日のとき。毎年の繰り返し。
+                    var arrM = reM.exec(startC);  // 開始の結果の配列を取得。
+                    var startM = parseInt(arrM[1]) - 1;  // 開始月を取得
+                    var startD = parseInt(arrM[2]);  // 開始日の取得
+                    var endM;
+                    var endD;
+                    if (reD.test(endC)) {  // 月日-日のとき
+                        endM = startM;  // 終了月を取得
+                        endD = parseInt(reD.exec(endC)[1]);  // 終了日の取得
+                    } else if (reM.test(endC)) {
+                        var arrM = reM.exec(endC);  // 終了の結果の配列を取得。
+                        endM= parseInt(arrM[1]) - 1;  // 終了月を取得
+                        endD = parseInt(arrM[2]);  // 終了日の取得
+                    }
+                    for (var y in dic) {  // すべての年について
+                        var startDt = new Date(parseInt(y), startM, startD);
+                        var endDt = new Date(parseInt(y), endM, endD); 
+                        for (var i=1;) {
+                            
+                            var dms = 1000 * 60 * 60 * 24;
+                        }
+                                
+                    }
+                        
+                    
+                    
+                    
+                case reY.text(startC):  // 年月日-年月日、年月日-月日、年月日-月日、のとき。1回のみ。
+                    
+                    
+                
+            }
+
             
             
             
@@ -500,8 +549,8 @@ function addHoliday() {
            }
         } else {  // 区間指定以外のとき
             switch (true) {
-                case dre.test(e):  // 日を指定
-                    var d = parseInt(dre.exec(e)[1]);  // 文字列を整数に変換。
+                case reD.test(e):  // 日を指定
+                    var d = parseInt(reD.exec(e)[1]);  // 文字列を整数に変換。
                     if (d<32) {  // 1から31の整数のみに対して処理する。
                         for (var y in dic) {  // すべての年について
                             for (var m=0;m<12;m++) {  // すべての月に対して
@@ -510,26 +559,29 @@ function addHoliday() {
                         }             
                     } 
                     break;
-                case mre.test(e):  // 月日を指定
-                    var marr = mre.exec(e);  // 正規表現の結果の配列を取得。
+                case reM.test(e):  // 月日を指定
+                    var arrM = reM.exec(e);  // 正規表現の結果の配列を取得。
+                    var m = parseInt(arrM[1]) - 1;  // 月を取得
+                    var d = parseInt(arrM[2]);  // 日の取得
                     for (var y in dic) {  // すべての年について
-                        var m = parseInt(marr[1]) - 1;  // 月を取得
-                        var d = parseInt(marr[2]);  // 日の取得
                         add(y,m,d);  // 休日を辞書に追加
                     }
                     break;
-                case yre.test(e):  // 年月日を指定
-                    var yarr = yre.exec(e);  // 年月日の指定の時
-                    var y = yarr[1];  // 年を取得
-                    var m = parseInt(yarr[2]) - 1;  // 月を取得
-                    var d = parseInt(yarr[3]);  // 日を取得
+                case reY.test(e):  // 年月日を指定
+                    var arrY = reY.exec(e);  // 年月日の指定の時
+                    var y = arrY[1];  // 年を取得
+                    var m = parseInt(arrY[2]) - 1;  // 月を取得
+                    var d = parseInt(arrY[3]);  // 日を取得
                     add(y,m,d);  // 休日を辞書に追加
                     break;
             }
             function add(y,m,d){  // 休日を辞書に追加する関数。引数は西暦年、月-1、日。
-                var h = dic[y][m];  // 指定年月の祝日の配列を収得
-                h.push(d);  // 新しい休日を配列に追加
-                sort(y,m,h);  // 休日の配列の重複を削除して昇順に並び替えて辞書に戻す。
+                var end = new Date(parseInt(y), m+1, 0).getDate();  // 月末日を収得。
+                if (d<end+1) {
+                    var h = dic[y][m];  // 指定年月の祝日の配列を収得
+                    h.push(d);  // 新しい休日を配列に追加
+                    sort(y,m,h);  // 休日の配列の重複を削除して昇順に並び替えて辞書に戻す。
+                }
             }
         }
     });
