@@ -470,14 +470,16 @@ function clipboadCopy(){  // テキストエリアをクリップボードにコ
  };
 function addHoliday() {
     var daydic = {"Sun":0,"Mon":1,"Tue":2,"Wed":3,"Thu":4,"Fri":5,"Sat":6};  // 曜日の辞書。
-    var dre = /^([1-3]*[1-9])(Sun|Mon|Tue|Wed|Thu|Fri|Sat)*$/i  // 日指定の正規表現パターン。
-    var mre = /^([1]*[1-9])\/([1-3]*[1-9])(Sun|Mon|Tue|Wed|Thu|Fri|Sat)*$/i  // 月日指定の正規表現パターン。
-    var yre = /^(\d\d\d\d)\/([1]*[1-9])\/([1-3]*[1-9])(Sun|Mon|Tue|Wed|Thu|Fri|Sat)*$/i  // 年月日指定の正規表現パターン。
+    var dre = /^([1-3]*[1-9])(Sun|Mon|Tue|Wed|Thu|Fri|Sat)*$/i;  // 日指定の正規表現パターン。
+    var mre = /^([1]*[1-9])\/([1-3]*[1-9])(Sun|Mon|Tue|Wed|Thu|Fri|Sat)*$/i;  // 月日指定の正規表現パターン。
+    var yre = /^(\d\d\d\d)\/([1]*[1-9])\/([1-3]*[1-9])(Sun|Mon|Tue|Wed|Thu|Fri|Sat)*$/i;  // 年月日指定の正規表現パターン。
     var dic = JSON.parse(document.getElementById("msg").value);  // 祝日JSONを取得。
     var str = document.getElementById("added").value;  // 追加休日の条件取得。
     var arr = str.split(",");  // 休日条件を配列に変換する
     arr.forEach(function(e) {  // 各休日条件について 
         if (e.indexOf("-")!=-1) {  // 区間指定のとき
+            
+            
             
             
         } else if (e in daydic) { // 曜日指定のとき
@@ -503,38 +505,35 @@ function addHoliday() {
                 case dre.test(e):  // 日を指定
                     var d = parseInt(dre.exec(e)[1]);  // 文字列を整数に変換。
                     if (d<32) {  // 1から31の整数のみに対して処理する。
-                        for (var key in dic) {  // すべての年について
+                        for (var y in dic) {  // すべての年について
                             for (var m=0;m<12;m++) {  // すべての月に対して
-                                var h = dic[key][m];  // 祝日の配列を収得
-                                h.push(d);  // 新しい休日を配列に追加
-                                dic[key][m] = Array.from(new Set(h)).sort(function(a,b) {  // 重複日を削除して昇順に要素を並べて辞書に戻す。
-                                    return (a < b ? -1 : 1);
-                                });
+                                add(y,m,d);  // 休日を辞書に追加
                             }
                         }             
                     } 
                     break;
                 case mre.test(e):  // 月日を指定
                     var marr = mre.exec(e);  // 正規表現の結果の配列を取得。
-                    for (var key in dic) {  // すべての年について
+                    for (var y in dic) {  // すべての年について
                         var m = parseInt(marr[1]) - 1;  // 月を取得
-                        var h = dic[key][m];  // 指定月の祝日の配列を収得
-                        h.push(parseInt(marr[2]));  // 新しい休日を配列に追加
-                        dic[key][m] = Array.from(new Set(h)).sort(function(a,b) {  // 重複日を削除して昇順に要素を並べて辞書に戻す。
-                            return (a < b ? -1 : 1);
-                        });
+                        var d = parseInt(marr[2]);  // 日の取得
+                        add(y,m,d);  // 休日を辞書に追加
                     }
                     break;
                 case yre.test(e):  // 年月日を指定
                     var yarr = yre.exec(e);  // 年月日の指定の時
-                    var key = yarr[1];  // 年を取得
+                    var y = yarr[1];  // 年を取得
                     var m = parseInt(yarr[2]) - 1;  // 月を取得
-                    var h = dic[key][m];  // 指定年月の祝日の配列を収得
-                    h.push(parseInt(yarr[3]));  // 新しい休日を配列に追加
-                    dic[key][m] = Array.from(new Set(h)).sort(function(a,b) {  // 重複日を削除して昇順に要素を並べて辞書に戻す。
-                        return (a < b ? -1 : 1);
-                    }); 
+                    var d = parseInt(yarr[3]);  // 日を取得
+                    add(y,m,d);  // 休日を辞書に追加
                     break;
+                function add(y,m,d){  // 休日を辞書に追加する関数。引数は西暦年、月-1、日。
+                    var h = dic[y][m];  // 指定年月の祝日の配列を収得
+                    h.push(d);  // 新しい休日を配列に追加
+                    dic[y][m] = Array.from(new Set(h)).sort(function(a,b) {  // 重複日を削除して昇順に要素を並べて辞書に戻す。
+                        return (a < b ? -1 : 1);
+                    });                     
+                }
             }
         }
     });
