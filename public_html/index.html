@@ -474,9 +474,9 @@ function addHoliday() {
   arr.forEach(function(e) {  // 各祝日条件について
     if (e.indexOf("/")==-1) {  // 日または曜日のみ指定のとき
         var d = parseInt(e);  // 文字列を整数に変換。
-        if (d) {  // 整数に変換できた時は日のみ指定とする
+        if (d) {  // 整数に変換できた時は日のみ指定と考える。
             if (d>0 && d<32) {  // 1から31の整数のみに対して処理する。
-                for (key in dic) {  // すべての月について祝日として追加
+                for (key in dic) {  // すべての年について
                     for (var m=0;m<12;m++) {  // すべての月に対して
                         var h = dic[key][m];  // 祝日の配列を収得
                         h.push(d);  // 新しい休日を配列に追加
@@ -486,18 +486,29 @@ function addHoliday() {
                     }
                 }             
             }   
-        } else {
-            var day;
-            switch(e) {
-                case "Sun":
-                    day = 0;
-                    
+        } else {  // 曜日のみ指定の時
+            var daydic = {"Sun":0,"Mon":1,"Tue":2,"Wed":3,"Thr":4,"Fri":5,"Sat":6};
+            if (e in daydic) {  // 曜日が指定されているとき
+                 for (key in dic) {  // すべての年について
+                     for (var m=0;m<12;m++) {  // すべての月に対して
+                        var dt = new Date(parseInt(key), m+1, 0);  // 月末のDateオブジェクトを収得。
+                        var day = dt.getDay();  // 月末の曜日を取得。日曜日は0、土曜日は6になる
+                        var end = dt.getDate();  // 月末の日にちを収得。
+                        var dif = day - daydic[e];
+                        var d = (dif<0)?end-(7+dif):end-dif;  // その月の最後のその曜日の日を収得。
+                        var h = dic[key][m];  // 祝日の配列を収得
+                        while (d>0) {  // dが正の間
+                            h.push(d);  // 新しい休日を配列に追加
+                            d = d - 7;  // 前週の日を収得。
+                         }
+                        dic[key][m] = Array.from(new Set(h)).sort(function(a,b) {  // 重複日を削除して昇順に要素を並べて辞書に戻す。
+                            return (a < b ? -1 : 1);
+                        });
+                    }
+                }
             }
-            
-            
-            
         }
-    }
+    } 
     var json = JSON.stringify(dic);  // 辞書をJSON文字列に変換。
     document.holiday.msg.value = json;  // 変換したJSON文字列をテキストエリアに表示。    
   });
