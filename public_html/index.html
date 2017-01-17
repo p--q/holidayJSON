@@ -487,11 +487,11 @@ function addHoliday() {
                         var y = parseInt(key);  // 年を数値で収得。
                         for (var m=0;m<12;m++) {  // すべての月に対して
                             endD = endDate(y,m,endD);  // 月末日の修正。
-                            var h = dic[key][m];  // 指定年月の祝日の配列を収得。
+                            var h = dic[y][m];  // 指定年月の祝日の配列を収得。
                             for (var d=startD;d<=endD;d++) {  // 開始日から終了日まで。
                                 h.push(d);  // 新しい休日を配列に追加
                             }
-                            sort(key,m,h);  // 休日の配列の重複を削除して昇順に並び替えて辞書に戻す。
+                            sort(y,m,h);  // 休日の配列の重複を削除して昇順に並び替えて辞書に戻す。
                         }
                     }
                     break;
@@ -499,8 +499,7 @@ function addHoliday() {
                     var arrM = reM.exec(startC);  // 開始の正規表現の結果の配列を取得。
                     var startM = parseInt(arrM[1]) - 1;  // 開始月を取得
                     var startD = parseInt(arrM[2]);  // 開始日の取得
-                    var endM;
-                    var endD;
+                    var endM,endD;
                     if (reD.test(endC)) {  // 月日-日のとき
                         endM = startM;  // 終了月を取得
                         endD = parseInt(reD.exec(endC)[1]);  // 終了日の取得
@@ -512,44 +511,80 @@ function addHoliday() {
                     for (var key in dic) {  // すべての年について
                         var y = parseInt(key);  // 年を数値で収得。
                         for (var m=startM;m<=endM;m++) {  // 開始月から終了月まで。
-                            var eD = (m==endM)?endDate(y,m,endD):endDate(y,m,31);  // 月の終了日の収得。
-                            var h = dic[key][m];  // 指定年月の祝日の配列を収得。
-                            for (var d=startD;d<=eD;d++) {  // 開始日から終了日まで。
+                            var sD = startD;  // 開始日
+                            var eD = endD;  // 終了日
+                            if (m==startM && m!=endM) {  // 開始月、かつ、終了月でない、のとき
+                                eD = endDate(y,m,31);
+                            } else if (m!=startM && m==endM) {  // 開始月でない、かつ、終了月、のとき
+                                sD = 1;
+                            } else if (m!=startM && m!=endM) {  // 開始月でない、かつ、終了月でない、のとき
+                                sD = 1;
+                                eD =  endDate(y,m,31);
+                            }
+                            var h = dic[y][m];  // 指定年月の祝日の配列を収得。
+                            for (var d=sD;d<=eD;d++) {  // 開始日から終了日まで。
                                 h.push(d);  // 新しい休日を配列に追加
                             }
-                            sort(key,m,h);  // 休日の配列の重複を削除して昇順に並び替えて辞書に戻す。
+                            sort(y,m,h);  // 休日の配列の重複を削除して昇順に並び替えて辞書に戻す。
                         }
                     }
                     break;
                 case reY.test(startC):  // 年月日-年月日、年月日-月日、年月日-日、のとき。1回のみ。
+                    var startY,startM,startD,endY,endM,endD;
+                    var keys = Object.keys(dic);  // 祝日JSONのkeyの配列を得る。
+                    var minY = Math.min.apply(null, keys);  // 最小年の取得。
+                    var maxY = Math.max.apply(null, keys);  // 最大年の取得。
                     var arrY = reY.exec(startC);  // 開始の正規表現の結果の配列を取得。
-                    var startY = parseInt(arrY[1]);  // 開始年を収得。
-                    var startM = parseInt(arrY[2]) - 1;  // 開始月を取得
-                    var startD = parseInt(arrY[3]);  // 開始日の取得
-                    var endY;
-                    var endM;
-                    var endD;
+                    var startyr = parseInt(arrY[1]);  // 開始年を収得。
+                    if (startyr<minY) {  // 開始年が最小年より小さい時
+                        startY = minY;  // 開始年月日を最小年の開始日に設定する。
+                        startM = 0;
+                        startD = 1;
+                    } else {
+                        startY = startyr;
+                        startM = parseInt(arrY[2]) - 1;  // 開始月を取得
+                        startD = parseInt(arrY[3]);  // 開始日の取得
+                    }
                     if (reY.test(endC)) {  // 年月日-年月日のとき
                         var arrY = reY.exec(endC);  // 終了の正規表現の結果の配列を取得。
                         endY = parseInt(arrY[1]);  // 終了年を収得。
-                        endM = parseInt(arrY[2]) - 1;  // 終了月を取得
-                        endD = parseInt(arrY[3]);  // 終了日の取得
-                    } else if (reM.test(endC)) {  // 年月日-月日のとき
-                        endY = startY;  // 終了年を収得。
-                        var arrY = reY.exec(endC);  // 終了の正規表現の結果の配列を取得。
-                        endM = parseInt(arrY[1]) - 1;  // 終了月を取得
-                        endD = parseInt(arrY[2]);  // 終了日の取得
-                    } else if (reD.test(endC)) {
-                        endY = startY;  // 終了年を収得。
-                        endM = startM;  // 終了月を取得
-                        endD = parseInt(reD.exec(endC)[1]);  // 終了日の取得。
+                        if (endY>maxY) {  // 終了年が最大年より大きい時。
+                            endY = maxY;  // 終了年月日を最大年の最終日に設定する。
+                            endM = 11;
+                            endD = 31;
+                        } else {
+                            endM = parseInt(arrY[2]) - 1;  // 終了月を取得
+                            endD = parseInt(arrY[3]);  // 終了日の取得
+                        }
+                    } else if (startyr>=minY) {  // 開始年が最小年以上の時のみ
+                        if (reM.test(endC)) {  // 年月日-月日のとき
+                            endY = startY;  // 終了年を収得。
+                            var arrM = reM.exec(endC);  // 終了の正規表現の結果の配列を取得。
+                            endM = parseInt(arrM[1]) - 1;  // 終了月を取得
+                            endD = parseInt(arrM[2]);  // 終了日の取得
+                        } else if (reD.test(endC)) {  // 年月日-日のとき
+                            endY = startY;  // 終了年を収得。
+                            endM = startM;  // 終了月を取得
+                            endD = parseInt(reD.exec(endC)[1]);  // 終了日の取得。
+                        }     
+                    } else {
+                        return;  // 上記以外のときは終了する。
                     }
                     if (startY==endY) {  // 開始年と終了年が同じ時
                         var y = startY;
                         for (var m=startM;m<=endM;m++) {  // 開始月から終了月まで。
-                            var eD = (m==endM)?endDate(y,m,endD):endDate(y,m,31);  // 月の終了日の収得。
+                            var sD = startD;  // 開始日
+                            var eD = endD;  // 終了日
+                            if (m==startM && m!=endM) {  // 開始月、かつ、終了月でない、のとき
+                                eD = endDate(y,m,31);
+                            } else if (m!=startM && m==endM) {  // 開始月でない、かつ、終了月、のとき
+                                sD = 1;
+                            } else if (m!=startM && m!=endM) {  // 開始月でない、かつ、終了月でない、のとき
+                                sD = 1;
+                                eD =  endDate(y,m,31);
+                            }
                             var h = dic[y][m];  // 指定年月の祝日の配列を収得。
-                            for (var d=startD;d<=eD;d++) {  // 開始日から終了日まで。
+                            for (var d=sD;d<=eD;d++) {  // 開始日から終了日まで。
                                 h.push(d);  // 新しい休日を配列に追加
                             }
                             sort(y,m,h);  // 休日の配列の重複を削除して昇順に並び替えて辞書に戻す。
@@ -557,28 +592,62 @@ function addHoliday() {
                     } else if (startY<endY) {
                         for (var y=startY;y<=endY;y++){  // 開始年から終了年まで。
                             if (y==startY) {  // 開始年のとき
-                                for (var m=startM;m<12;m++) {  // 開始月から12月まで。
-                                    var eD = endDate(y,m,31);  // 月の終了日の収得。
+                                var endM = 11;  // 最終月を12月にする。
+                                for (var m=startM;m<=endM;m++) {  // 開始月から12月まで。
+                                    var endD = endDate(y,m,31);  // 終了日を年の最終日にする。
+                                    var sD = startD;  // 開始日
+                                    var eD = endD;  // 終了日
+                                    if (m==startM && m!=endM) {  // 開始月、かつ、終了月でない、のとき
+                                        eD = endDate(y,m,31);
+                                    } else if (m!=startM && m==endM) {  // 開始月でない、かつ、終了月、のとき
+                                        sD = 1;
+                                    } else if (m!=startM && m!=endM) {  // 開始月でない、かつ、終了月でない、のとき
+                                        sD = 1;
+                                        eD =  endDate(y,m,31);
+                                    }
                                     var h = dic[y][m];  // 指定年月の祝日の配列を収得。
-                                    for (var d=startD;d<=eD;d++) {  // 開始日から終了日まで。
+                                    for (var d=sD;d<=eD;d++) {  // 開始日から終了日まで。
                                         h.push(d);  // 新しい休日を配列に追加
                                     }
                                     sort(y,m,h);  // 休日の配列の重複を削除して昇順に並び替えて辞書に戻す。
                                 }
                             } else if (y==endY) {  // 終了年のとき
-                                for (var m=0;m<=endM;m++) {  // 1月から終了月まで。
-                                    var eD = (m==endM)?endDate(y,m,endD):endDate(y,m,31);  // 月の終了日の収得。
+                                var startM = 0;  // 開始月を1月にする
+                                for (var m=startM;m<=endM;m++) {  // 1月から終了月まで。
+                                    var endD = endDate(y,m,31);  // 終了日を年の最終日にする。
+                                    var sD = startD;  // 開始日
+                                    var eD = endD;  // 終了日
+                                    if (m==startM && m!=endM) {  // 開始月、かつ、終了月でない、のとき
+                                        eD = endDate(y,m,31);
+                                    } else if (m!=startM && m==endM) {  // 開始月でない、かつ、終了月、のとき
+                                        sD = 1;
+                                    } else if (m!=startM && m!=endM) {  // 開始月でない、かつ、終了月でない、のとき
+                                        sD = 1;
+                                        eD =  endDate(y,m,31);
+                                    }
                                     var h = dic[y][m];  // 指定年月の祝日の配列を収得。
-                                    for (var d=startD;d<=eD;d++) {  // 開始日から終了日まで。
+                                    for (var d=sD;d<=eD;d++) {  // 開始日から終了日まで。
                                         h.push(d);  // 新しい休日を配列に追加
                                     }
                                     sort(y,m,h);  // 休日の配列の重複を削除して昇順に並び替えて辞書に戻す。
                                 }
                             } else {  // 開始年でも終了年でもないとき
-                                for (var m=0;m<12;m++) {  // 1月から12月まで。
-                                    var eD = endDate(y,m,31);  // 月の終了日の収得。
+                                var startM = 0;
+                                var endM = 11
+                                for (var m=startM;m<=endM;m++) {  // 1月から終了月まで。
+                                    var endD = endDate(y,m,31);  // 終了日を年の最終日にする。
+                                    var sD = startD;  // 開始日
+                                    var eD = endD;  // 終了日
+                                    if (m==startM && m!=endM) {  // 開始月、かつ、終了月でない、のとき
+                                        eD = endDate(y,m,31);
+                                    } else if (m!=startM && m==endM) {  // 開始月でない、かつ、終了月、のとき
+                                        sD = 1;
+                                    } else if (m!=startM && m!=endM) {  // 開始月でない、かつ、終了月でない、のとき
+                                        sD = 1;
+                                        eD =  endDate(y,m,31);
+                                    }
                                     var h = dic[y][m];  // 指定年月の祝日の配列を収得。
-                                    for (var d=startD;d<=eD;d++) {  // 開始日から終了日まで。
+                                    for (var d=sD;d<=eD;d++) {  // 開始日から終了日まで。
                                         h.push(d);  // 新しい休日を配列に追加
                                     }
                                     sort(y,m,h);  // 休日の配列の重複を削除して昇順に並び替えて辞書に戻す。
