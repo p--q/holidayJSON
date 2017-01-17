@@ -1,7 +1,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <script>
     // holidayJSONモジュール
-    var holidayJSON = holidayJSON || function() {
+    var holidayJSON =  holidayJSON || function() {
         var hj = {
             getJSON: function() {  // 祝日JSONデータの作成。
             var startY = parseInt(document.getElementById("startY").value);  // 開始年
@@ -776,7 +776,7 @@ function addHoliday() {
 祝日JSON出力<br />
 <textarea id="msg" style="height: 200px; width: 100%;"></textarea><br />
 <br />
-<input onclick="holidayJSON.getJSON()" type="submit" value="祝日JSONを作成する" />
+<input onclick="holidayJSON.getJSON();" type="submit" value="祝日JSONを作成する" />
   <input onclick="clipboadCopy()" type="button" value="クリップボードにコピーする" />
 </form>
 <br />
