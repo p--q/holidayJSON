@@ -28,7 +28,7 @@
                 document.holiday.msg.value = json;  // 変換したJSON文字列をテキストエリアに表示。
                 count();
             },
-            clpCopy: function() {  // テキストエリアをクリップボードにコピーする 
+            clpCopy: function() {  // テキストエリアをクリップボードにコピーする。iOSでは不能。
                 var txt = document.getElementById("msg");
                 txt.select();
                 document.execCommand("copy");
@@ -673,7 +673,7 @@
 <br />
 終了年:   <input id="endY" size="4" type="text" value="2030" />年<br />
 <br />
-JSON出力 <span id="date_count"></span> <br />
+JSON出力 <span id="date_count" style="font-size: small;color: gray"></span> <br />
 <textarea id="msg" style="height: 200px; width: 100%;"></textarea><br />
 <br />
 <input onclick="holidayJSON.getJSON();" type="submit" value="祝日JSONを作成する" />
@@ -681,7 +681,7 @@ JSON出力 <span id="date_count"></span> <br />
 <input onclick="holidayJSON.emptyJSON()" type="button" value="空JSONを作成する" />
 </form>
 <br />
-追加する休日
+<span style="font-size: large">追加する休日</span> <span style="font-size: small;color: gray">入力例: 23(毎月23日), 3/23(毎年3/23), 2017/3/23(2017/3/23のみ)、Mon(月曜日すべて。大文字小文字不問), 2/4-4/5Mon(毎年2/4から4/5の月曜日のみ)</span>
 <textarea id="added" style="height: 50px; width: 100%;">1/1-1/3, 12/28-12/31</textarea><br />
 <br />
-<input onclick="holidayJSON.addDate()" type="button" value="休日をJSONに追加する" />
+<input onclick="holidayJSON.addDate()" type="button" value="休日をJSONに追加する" />  振替休日には対応していません。
