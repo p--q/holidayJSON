@@ -4,30 +4,51 @@
     var holidayJSON =  holidayJSON || function() {
         var hj = {
             getJSON: function() {  // 祝日JSONデータの作成。
-            var startY = parseInt(document.getElementById("startY").value);  // 開始年
-            var endY = parseInt(document.getElementById("endY").value);  // 終了年
-            var dic = {};  // データを入れる辞書
+                var startY = parseInt(document.getElementById("startY").value);  // 開始年を取得。
+                var endY = parseInt(document.getElementById("endY").value);  // 終了年を取得。
+                g.dic = {};  // 辞書を初期化。
                 for(var y=startY;y<=endY;y++) {  // 各年について
-                    dic[y] = [];  // 辞書の値を配列にする。
+                    g.dic[y] = [];  // 辞書の値を配列にする。
                     for(var m=0;m<12;m++) {  // 各月について
                         var r = hdayjp.calculate(y,m);  // 祝日オブジェクトの配列を取得。祝日オブジェクトのmdプロパティに日付が入っている。
                         var h = [];  // 祝日の日付をいれる配列。
                         r.forEach(function(e){
                             h.push(e.md);  // 祝日オブジェクトのmdプロパティから日付一覧を取得。
                         });
-                        dic[y].push(h);  // 辞書の値の配列の要素に祝日の日付を追加。
+                        g.dic[y].push(h);  // 辞書の値の配列の要素に祝日の日付を追加。
                     }
+                    if (y==2017) {  // 2017/1/2の振替休日修正分
+                        g.dic[y][0].push(2);
+                        g.dic[y][0] = Array.from(new Set(g.dic[y][0])).sort(function(a,b) {  // 重複要素を削除して昇順に並び替える。
+                            return (a < b ? -1 : 1);
+                        });
+                    }  
                 }
-                var json = JSON.stringify(dic);  // 辞書をJSON文字列に変換。
+                var json = JSON.stringify(g.dic);  // 辞書をJSON文字列に変換。
                 document.holiday.msg.value = json;  // 変換したJSON文字列をテキストエリアに表示。
+                count();
             },
             clpCopy: function() {  // テキストエリアをクリップボードにコピーする 
                 var txt = document.getElementById("msg");
                 txt.select();
                 document.execCommand("copy");
             },
+            emptyJSON: function() {  // 空JSONデータの作成。
+                var startY = parseInt(document.getElementById("startY").value);  // 開始年を取得。
+                var endY = parseInt(document.getElementById("endY").value);  // 終了年を取得。
+                g.dic = {};  // 辞書を初期化。
+                for(var y=startY;y<=endY;y++) {  // 各年について
+                    g.dic[y] = [];  // 辞書の値を配列にする。
+                    for(var m=0;m<12;m++) {  // 各月について
+                        g.dic[y][m] = [];
+                    }
+                }
+                var json = JSON.stringify(g.dic);  // 辞書をJSON文字列に変換。
+                document.holiday.msg.value = json;  // 変換したJSON文字列をテキストエリアに表示。
+                count();
+            },
             addDate: function() {
-                var startC,startY,startM,startD,endC,endY,endM,endD,sY,eY,arrR,y,m,d;  // ローカル変数
+                var startC,startY,startM,startD,endC,endY,endM,endD,arrR,y,m,d;  // ローカル変数
                 g.dic = JSON.parse(document.getElementById("msg").value);  // 祝日JSONを取得。
                 var keys = Object.keys(g.dic);  // 祝日JSONのkeyの配列を得る。
                 g.sY = Math.min.apply(null, keys);  // 祝日JSONの開始年の取得。
@@ -100,6 +121,7 @@
                                         }  
                                     }
                                 }
+                                break;
                         }
                     } else if (e.toUpperCase() in g.daydic) { // 曜日指定のとき
                         for (y=g.sY;y<=g.eY;y++) {  // すべての年について
@@ -138,6 +160,7 @@
                 });
                 var json = JSON.stringify(g.dic);  // 辞書をJSON文字列に変換。
                 document.holiday.msg.value = json;  // 変換したJSON文字列をテキストエリアに表示。
+                count();
             }
         };  // end of hj
         var g = { // モジュール内の"グローバル"変数。
@@ -184,6 +207,15 @@
                 } 
             } 
         }  
+        function count() {  // 日の数を数える。
+            var c = 0;
+            for (var y in g.dic) {
+                for (var m=0;m<12;m++) {
+                    c += g.dic[y][m].length;
+                }
+            } 
+            document.getElementById("date_count").textContent = "合計日数: " + c;
+        }
         {  // 単にIDEで折りたたむだけのカッコ。JavaScriptはグローバルスコープと関数スコープしかない。
             var hdayjp = {};
         // Copyright (c) 2014, boiledorange73
@@ -635,17 +667,18 @@
 </script>
 
 <form action="javascript:void(0)" method="GET" name="holiday">
-祝日データ作成期間 <br />
+データ作成期間 <br />
 <br />
 開始年:   <input id="startY" size="4" type="text" value="2013" />年 (1948年以後）<br />
 <br />
 終了年:   <input id="endY" size="4" type="text" value="2030" />年<br />
 <br />
-祝日JSON出力<br />
+JSON出力 <span id="date_count"></span> <br />
 <textarea id="msg" style="height: 200px; width: 100%;"></textarea><br />
 <br />
 <input onclick="holidayJSON.getJSON();" type="submit" value="祝日JSONを作成する" />
-  <input onclick="holidayJSON.clpCopy()" type="button" value="クリップボードにコピーする" />
+<input onclick="holidayJSON.clpCopy()" type="button" value="クリップボードにコピーする" />
+<input onclick="holidayJSON.emptyJSON()" type="button" value="空JSONを作成する" />
 </form>
 <br />
 追加する休日
