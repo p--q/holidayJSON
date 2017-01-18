@@ -1,4 +1,5 @@
-  var holidayJSON =  holidayJSON || function() {
+    // holidayJSONモジュール
+    var holidayJSON =  holidayJSON || function() {
         var hj = {
             getJSON: function() {  // 祝日JSONデータの作成。
                 var startY = parseInt(document.getElementById("startY").value);  // 開始年を取得。
@@ -54,8 +55,8 @@
                     e = e.trim();  // 要素の前後の空白を削除。
                     if (e.indexOf("-")!=-1) {  // 区間指定のとき
                         var arrC = e.split("-");  // 区間条件を配列に変換
-                        startC = arrC[0];  // 開始条件の取得
-                        endC = arrC[1];  // 終了条件の取得
+                        startC = arrC[0].trim();  // 開始条件の取得
+                        endC = arrC[1].trim();  // 終了条件の取得
                         switch (true) {
                             case g.reD.test(startC):  // 日-日のとき。毎月の繰り返し。
                                 startD = parseInt(g.reD.exec(startC)[1]);  // 開始日の取得。
