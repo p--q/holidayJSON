@@ -1,0 +1,1 @@
+java -jar ~/closure-compiler/compiler.jar --js uncomp.js  --js_output_file comp.min.js
